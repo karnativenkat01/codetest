@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8fe82967-df8a-4186-9d5a-497a21e11347" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="code_testFlow" doc:id="491395c8-69fb-4939-85c7-86c0e98ba8e2" >
+		<http:listener doc:name="Listener" doc:id="fb6b5b1c-b7b1-41c3-bd26-a877dbce3a9b" config-ref="HTTP_Listener_config" path="/emp" outputMimeType="application/json"/>
+		<logger level="INFO" doc:name="Logger" doc:id="df85dbd2-5441-4dd9-bd46-343e127e7c8c" message="#[payload]"/>
+		<flow-ref doc:name="callSubflow" doc:id="7a357774-8881-4d04-bb00-e44bc7398a32" name="subFlow42"/>
+	</flow>
+	<sub-flow name="tr_subFlow" doc:id="ea339120-b434-4861-b1b8-4fe9b8a813ed" >
+		<ee:transform doc:name="Transform Message" doc:id="03d134c7-e1ae-407f-80d0-f20970cd2816">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Strings
+
+fun tocamelize(aString) = camelize(aString)
+
+output application/json
+---
+
+
+	tocamelize(payload.employee.first_name ++ " "++ payload.employee.last_name ++ " employee profile is created in HRMS System.")
+
+   
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<flow name="subFlow41" doc:id="21f7b46a-a5f7-4545-8943-ac5f0141ee12" >
+		<ee:transform doc:name="Transform Message" doc:id="78eeef85-d2b0-4d2b-8c3a-9d587fa7a255" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Arrays
+
+
+var input1 = {"employee":[{"id":"A007","first_name":"Jan","last_name":"Doe"},{"id":"A008","first_name":"Ron","l
+ast_name":"David"},{"id":"A009","first_name":"Jane","last_name":"Kane"},{"id":"A010","first_name":
+"Marsh","last_name":"Megan"},{"id":"A011","first_name":"Kelly","last_name":"Mitch"},{"id":"A012",
+"first_name":"Chris","last_name":"Vaste"}]}
+
+var input2 = {"scoreBoard":[{"id":"A007","subjects":["Maths","English","Arts","Drawimgs"],"score":[80,75,89,100]},{"id":"A008","subjects":["Maths","English","Arts","Drawimgs"],"score":[70,85,69,90]},{"id":"
+A021","subjects":["Maths","English","Arts","Drawimgs"],"score":[90,87,77,95]}]}
+
+output application/json
+---
+
+{
+"certificate" :input1.employee map ((entry) -> {(entry + ((input2.scoreBoard filter $.id == entry.id) 
+	map $
+	
+))})
+
+}
+
+ 
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="subFlow42" doc:id="1b2d7f4e-bc08-43df-bf7e-a23d5db6606b" >
+		<ee:transform doc:name="Transform Message" doc:id="baf457f1-1e34-42be-884f-89fd266b0a05" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Arrays
+
+
+var input3 = {"employee":[{"id":"A007","first_name":"Jan","last_name":"Doe"},
+	{"id":"A008","first_name":"Ron","last_name":"David"},
+	{"id":"A009","first_name":"Jane","last_name":"Kane"},
+	{"id":"A010","first_name":"Marsh","last_name":"Megan"},
+	{"id":"A011","first_name":"Kelly","last_name":"Mitch"},
+	{"id":"A012","first_name":"Chris","last_name":"Vaste"}]}
+
+var input4 = {"scoreBoard":[{"id":"A007","subjects":["Maths","English","Arts","Drawimgs"],"score":[80,75,89,100]},
+	{"id":"A008","subjects":["Maths","English","Arts","Drawimgs"],"score":[70,85,69,90]},
+	{"id":"A021","subjects":["Maths","English","Arts","Drawimgs"],"score":[90,87,77,95]}]}
+
+output application/json
+---
+//input4.scoreBoard
+
+ outerJoin(input3.employee, input4.scoreBoard, (employee) -> employee.id, (scoreBoard) -> scoreBoard.id) 
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="subflow5" doc:id="804bee45-217f-4f79-90a6-d2d89e4494c5" >
+		<http:listener doc:name="Listener" doc:id="33ebf733-52d1-4281-a54a-aaad94084406" config-ref="HTTP_Listener_config" path="/empuri/{count}"/>
+		<set-variable value="#[attributes.uriParams.count]" doc:name="Set Variable" doc:id="9458ac60-b02f-4608-9c4d-35fae1360612" variableName="passedCount"/>
+		<set-payload value='#[%dw 2.0
+output application/json
+
+fun prepareList(list:Array, maxSize: Number) = if(sizeOf(list) &gt;= maxSize )
+list
+else
+prepareList(list ++ [(sizeOf(list) + 1) as Number],maxSize)
+---
+"output":prepareList([],vars.passedCount)]' doc:name="Set Payload" doc:id="abba3e13-8045-4ade-b901-370644ebf0fb" />
+		<logger level="INFO" doc:name="Logger" doc:id="3219a403-4aae-41cc-a72c-945bb97acf1c" message="#[payload]"/>
+	</flow>
+</mule>
