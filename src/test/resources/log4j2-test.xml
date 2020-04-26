@@ -18,6 +18,8 @@
 
         <AsyncRoot level="INFO">
             <AppenderRef ref="Console"/>
+			
+			
         </AsyncRoot>
     </Loggers>
 
